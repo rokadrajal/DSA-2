@@ -1,6 +1,8 @@
 #include <iostream>
 using namespace std;
 
+// mari rite case 3/4 karel 6e sir ae 30-3-26 ae karavel 6e
+
 int main()
 {
     int arr[10];
