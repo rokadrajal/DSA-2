@@ -1,0 +1,333 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Merge Sort Visualizer</title>
+
+<style>
+:root {
+    --bg: #020617;
+    --panel: rgba(30, 41, 59, 0.6);
+    --primary: #38bdf8;
+    --accent: #facc15;
+    --success: #22c55e;
+    --text: #e2e8f0;
+    --border: rgba(255,255,255,0.08);
+}
+
+/* GLOBAL */
+body {
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    font-family: 'Segoe UI', system-ui;
+    background: radial-gradient(circle at top, #0f172a, #020617);
+    color: var(--text);
+}
+
+/* CODE PANEL */
+.code-panel {
+    width: 40%;
+    padding: 25px;
+    backdrop-filter: blur(12px);
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+}
+
+.line {
+    padding: 6px 10px;
+    border-radius: 6px;
+    opacity: 0.5;
+    transition: 0.25s;
+}
+
+.line.active {
+    background: rgba(56,189,248,0.15);
+    border-left: 3px solid var(--primary);
+    opacity: 1;
+    color: white;
+    box-shadow: 0 0 10px rgba(56,189,248,0.3);
+}
+
+/* VISUAL PANEL */
+.viz-panel {
+    flex: 1;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADINGS */
+h2, h3 {
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+/* ARRAY */
+.array-container {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+/* BOX */
+.box {
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    font-weight: bold;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+/* STATES */
+.active-range {
+    border: 2px solid var(--primary);
+    transform: translateY(-4px);
+    box-shadow: 0 0 12px rgba(56,189,248,0.4);
+}
+
+.comparing {
+    background: var(--accent);
+    color: black;
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(250,204,21,0.6);
+}
+
+.merged {
+    background: var(--success);
+    color: black;
+    box-shadow: 0 0 15px rgba(34,197,94,0.6);
+}
+
+.mid {
+    border: 2px dashed orange;
+    box-shadow: 0 0 10px orange;
+}
+
+/* POINTER */
+.pointer-label {
+    position: absolute;
+    bottom: -22px;
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: bold;
+}
+
+/* INFO BOX */
+#info {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* BUTTONS */
+.controls {
+    margin-top: auto;
+    display: flex;
+    gap: 15px;
+}
+
+button {
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    color: black;
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 0 15px rgba(56,189,248,0.5);
+}
+
+button:active {
+    transform: scale(0.95);
+}
+</style>
+</head>
+
+<body>
+
+<div class="code-panel" id="code"></div>
+
+<div class="viz-panel">
+
+<h2>Main Array</h2>
+<div id="main-array" class="array-container"></div>
+
+<h3>Temp Array</h3>
+<div id="temp-array" class="array-container"></div>
+
+<div id="info"></div>
+
+<div class="controls">
+<button onclick="step(-1)">Prev</button>
+<button onclick="step(1)">Next</button>
+</div>
+
+</div>
+
+<script>
+
+// CODE WITH FIX
+const code = [
+"void mergeSort(int arr[], int low, int high) {",
+"  if (low < high) {",
+"    int mid = (low + high) / 2;",
+"    mergeSort(arr, low, mid);",
+"    mergeSort(arr, mid + 1, high);",
+"    merge(arr, low, mid, high);",
+"  }",
+"}",
+"",
+"void merge(int arr[], int low, int mid, int high) {",
+"  int temp[100];",
+"  int i = low, j = mid + 1, k = 0;",
+"  while (i <= mid && j <= high) {",
+"    if (arr[i] <= arr[j]) temp[k++] = arr[i++];",
+"    else temp[k++] = arr[j++];",
+"  }",
+"  while (i <= mid) temp[k++] = arr[i++];",
+"  while (j <= high) temp[k++] = arr[j++];",
+"  for (int x = 0; x < k; x++) arr[low+x] = temp[x];",
+"}"
+];
+
+function renderCode(active){
+    document.getElementById("code").innerHTML =
+        code.map((l,i)=>`<div class="line ${i===active?'active':''}">${l}</div>`).join("");
+}
+
+// DATA
+let arr = [38,27,43,3,9,82,10];
+let states = [];
+let cur = 0;
+
+function record(step){
+    states.push({...step, arr:[...step.arr], temp:[...step.temp]});
+}
+
+// MERGE SORT LOGIC WITH TRACKING
+function generate(){
+
+    let a = [...arr];
+
+    function merge(low, mid, high, depth){
+
+        let i = low, j = mid+1, k = 0;
+        let temp = [];
+
+        record({line:10,msg:`Start merging [${low}-${mid}] & [${mid+1}-${high}]`,arr:a,temp,low,mid,high,i,j,k,depth});
+
+        while(i<=mid && j<=high){
+            record({line:12,msg:`Compare ${a[i]} & ${a[j]}`,arr:a,temp,low,mid,high,i,j,k,depth});
+
+            if(a[i] <= a[j]){
+                temp.push(a[i]);
+                record({line:13,msg:`Take LEFT ${a[i]}`,arr:a,temp,low,mid,high,i,j,k,depth});
+                i++; k++;
+            } else {
+                temp.push(a[j]);
+                record({line:14,msg:`Take RIGHT ${a[j]}`,arr:a,temp,low,mid,high,i,j,k,depth});
+                j++; k++;
+            }
+        }
+
+        while(i<=mid){
+            temp.push(a[i]);
+            record({line:16,msg:`Remaining LEFT ${a[i]}`,arr:a,temp,low,mid,high,i,j,k,depth});
+            i++; k++;
+        }
+
+        while(j<=high){
+            temp.push(a[j]);
+            record({line:17,msg:`Remaining RIGHT ${a[j]}`,arr:a,temp,low,mid,high,i,j,k,depth});
+            j++; k++;
+        }
+
+        for(let x=0;x<temp.length;x++){
+            a[low+x] = temp[x];
+            record({line:18,msg:`Copy temp[${x}] → arr[${low+x}]`,arr:a,temp,low,mid,high,i,j,k,depth});
+        }
+    }
+
+    function sort(low, high, depth=0){
+        record({line:1,msg:`Depth ${depth}: sort(${low},${high})`,arr:a,temp:[],low,high,depth});
+
+        if(low<high){
+            let mid = Math.floor((low+high)/2);
+            record({line:2,msg:`Mid = ${mid}`,arr:a,temp:[],low,high,mid,depth});
+
+            sort(low,mid,depth+1);
+            sort(mid+1,high,depth+1);
+
+            merge(low,mid,high,depth);
+        }
+    }
+
+    sort(0,a.length-1);
+}
+
+// RENDER
+function render(){
+
+    let s = states[cur];
+    if(!s) return;
+
+    renderCode(s.line);
+
+    document.getElementById("main-array").innerHTML =
+        s.arr.map((v,idx)=>{
+            let cls="box";
+
+            if(idx>=s.low && idx<=s.high) cls+=" active-range";
+            if(idx===s.mid) cls+=" mid";
+
+            let label="";
+            if(idx===s.i && idx===s.j) label="i,j";
+            else if(idx===s.i) label="i";
+            else if(idx===s.j) label="j";
+
+            if(label) cls+=" comparing";
+
+            return `<div class="${cls}">${v}${label?`<div class="pointer-label">${label}</div>`:''}</div>`;
+        }).join("");
+
+    document.getElementById("temp-array").innerHTML =
+        s.temp.map(v=>`<div class="box merged">${v}</div>`).join("");
+
+    document.getElementById("info").innerText =
+        s.msg + " | k=" + (s.k ?? "");
+}
+
+function step(d){
+    cur += d;
+    if(cur<0) cur=0;
+    if(cur>=states.length) cur=states.length-1;
+    render();
+}
+
+// INIT
+generate();
+render();
+
+</script>
+
+</body>
+</html>
