@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quick Sort Pro Visualizer</title>
+
+<style>
+:root {
+    --bg:#020617;
+    --panel:#0f172a;
+    --primary:#38bdf8;
+    --pivot:#35d6f6;
+    --left:#22c55e;
+    --right:#f187da;
+    --text:#e2e8f0;
+}
+
+body {
+    margin:0;
+    display:flex;
+    height:100vh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui;
+}
+
+/* LEFT PANEL */
+.code-panel {
+    width:35%;
+    padding:20px;
+    background:var(--panel);
+    overflow-y:auto;
+    font-family: monospace;
+    font-size:14px;
+}
+
+.line {
+    padding:6px;
+    opacity:0.5;
+}
+
+.line.active {
+    background:rgba(56,189,248,0.2);
+    opacity:1;
+}
+
+/* RIGHT PANEL */
+.viz {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    padding:20px;
+}
+
+.array {
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-top:30px;
+}
+
+.box {
+    width:55px;
+    height:55px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#1e293b;
+    border-radius:10px;
+    font-weight:bold;
+}
+
+/* STATES */
+.pivot { background:var(--pivot); }
+.left { background:var(--left); color:black; }
+.right { background:var(--right); }
+.compare { transform:scale(1.1); }
+
+.controls {
+    margin-top:auto;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+button {
+    padding:10px 15px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:var(--primary);
+}
+
+input {
+    width:120px;
+}
+
+.info {
+    margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="code-panel" id="code"></div>
+
+<div class="viz">
+<h2>Quick Sort Visualizer</h2>
+
+<div id="array" class="array"></div>
+
+<div class="info">
+<p id="msg"></p>
+<p><b>Time Complexity:</b> Avg O(n log n), Worst O(n²)</p>
+</div>
+
+<div class="controls">
+<button onclick="step(-1)">Prev</button>
+<button onclick="step(1)">Next</button>
+<button onclick="play()">Play</button>
+<button onclick="pause()">Pause</button>
+<button onclick="reset()">Reset</button>
+
+<label>Speed:</label>
+<input type="range" min="100" max="1000" value="500" id="speed">
+</div>
+</div>
+
+<script>
+
+/* LEFT PANEL (C++ + INTUITION) */
+const code = [
+"QUICK SORT (C++)",
+"",
+"Intuition:",
+"1. Pick a pivot (last element)",
+"2. Smaller → LEFT | Larger → RIGHT",
+"3. Pivot goes to correct position",
+"4. Repeat recursively",
+"",
+"--------------------------------",
+"",
+"void quickSort(int arr[], int low, int high) {",
+"    if (low < high) {",
+"",
+"        int pi = partition(arr, low, high);",
+"",
+"        quickSort(arr, low, pi - 1);",
+"        quickSort(arr, pi + 1, high);",
+"    }",
+"}",
+"",
+"int partition(int arr[], int low, int high) {",
+"",
+"    int pivot = arr[high];",
+"    int i = low - 1;",
+"",
+"    for (int j = low; j < high; j++) {",
+"",
+"        if (arr[j] < pivot) {",
+"            i++;",
+"",
+"            int temp = arr[i];",
+"            arr[i] = arr[j];",
+"            arr[j] = temp;",
+"        }",
+"    }",
+"",
+"    int temp = arr[i + 1];",
+"    arr[i + 1] = arr[high];",
+"    arr[high] = temp;",
+"",
+"    return i + 1;",
+"}"
+];
+
+function renderCode(i){
+    document.getElementById("code").innerHTML =
+    code.map((l,idx)=>`<div class="line ${idx===i?'active':''}">${l}</div>`).join("");
+}
+
+/* DATA */
+let arr = [8,3,1,7,0,10,2];
+let states = [];
+let cur = 0;
+let timer = null;
+
+/* RECORD */
+function record(s){
+    states.push({...s, arr:[...s.arr]});
+}
+
+/* QUICK SORT */
+function quickSort(a, low, high){
+    if(low < high){
+        let pi = partition(a, low, high);
+        quickSort(a, low, pi-1);
+        quickSort(a, pi+1, high);
+    }
+}
+
+function partition(a, low, high){
+
+    let pivot = a[high];
+    let i = low - 1;
+
+    record({arr:a, pivot:high, msg:`🎯 Pivot selected: ${pivot}`, line:2});
+
+    for(let j=low;j<high;j++){
+
+        record({arr:a, pivot:high, j, msg:`Compare ${a[j]} with pivot ${pivot}`, line:3});
+
+        if(a[j] < pivot){
+            i++;
+            [a[i],a[j]] = [a[j],a[i]];
+
+            record({arr:a, pivot:high, i, j, msg:`✅ ${a[i]} goes LEFT`, line:3});
+        } else {
+            record({arr:a, pivot:high, j, msg:`❌ ${a[j]} stays RIGHT`, line:3});
+        }
+    }
+
+    [a[i+1],a[high]] = [a[high],a[i+1]];
+
+    record({arr:a, pivot:i+1, msg:`📍 Pivot placed correctly`, line:4});
+
+    return i+1;
+}
+
+/* GENERATE */
+function generate(){
+    let a = [...arr];
+    quickSort(a,0,a.length-1);
+}
+
+/* RENDER */
+function render(){
+
+    let s = states[cur];
+    if(!s) return;
+
+    renderCode(s.line);
+
+    document.getElementById("array").innerHTML =
+    s.arr.map((v,i)=>{
+
+        let cls="box";
+
+        if(i===s.pivot) cls+=" pivot";
+        else if(i<=s.i) cls+=" left";
+        else if(i>s.pivot) cls+=" right";
+
+        if(i===s.j) cls+=" compare";
+
+        return `<div class="${cls}">${v}</div>`;
+    }).join("");
+
+    document.getElementById("msg").innerText = s.msg;
+}
+
+/* CONTROLS */
+function step(d){
+    cur += d;
+    if(cur<0) cur=0;
+    if(cur>=states.length) cur=states.length-1;
+    render();
+}
+
+function play(){
+    pause();
+    timer = setInterval(()=>{
+        step(1);
+        if(cur === states.length-1) pause();
+    }, document.getElementById("speed").value);
+}
+
+function pause(){
+    clearInterval(timer);
+}
+
+function reset(){
+    pause();
+    states = [];
+    cur = 0;
+
+    arr = Array.from({length:7}, () => Math.floor(Math.random()*50));
+
+    generate();
+    render();
+}
+
+/* INIT */
+generate();
+render();
+
+</script>
+
+</body>
+</html>
