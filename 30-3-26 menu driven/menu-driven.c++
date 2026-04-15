@@ -67,7 +67,7 @@ int main()
             cout<<endl<<"Enter the position of element to delete :";
             cin>>pos;  
             
-            if(pos >= 0 && pos < num)
+            if(pos >= 0 && pos <= num)
             {
                 for(int i=pos-1; i<num-1; i++)
                 {
@@ -90,9 +90,9 @@ int main()
             cout<<endl<<"Enter the value of element to update :";
             cin>>value;  
 
-            if(pos >= 0 && pos < num)
+            if(pos >= 0 && pos <= num)
             {
-                arr[pos] = value;
+                arr[pos-1] = value;
                 cout<<endl<<"Element updated successfully !"<<endl;
             }
             else
