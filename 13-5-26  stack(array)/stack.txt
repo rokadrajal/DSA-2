@@ -1,0 +1,35 @@
+STACK :-
+
+Linear data structure :
+    1. Array
+      int arr[100];
+
+    2. vector
+      Header #include <vector>
+      vector<int> v1;  
+
+    3. Linked List
+      Header #include <list>
+      list<int> l1; 
+
+
+class stack 
+{
+    int arr[100];
+    int top;
+}    
+
+class stack 
+{
+    vector<int> v1;
+    int top;
+}    
+
+class stack 
+{
+   list<int> stl;
+    int top;
+}    
+
+
+STACK -> LIFO = Last In First Out
