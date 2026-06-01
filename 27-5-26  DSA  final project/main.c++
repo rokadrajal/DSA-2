@@ -392,7 +392,9 @@ public:
 
     string autoGeneratePNR()
     {
-        return "4502";
+        static int pnr = 4501;
+        pnr++;
+        return to_string(pnr);
     }
 
     void confirmBooking()
@@ -497,7 +499,7 @@ public:
                 cout << "How Many Tickets You Want To Book :";
                 cin >> totalTicket;
 
-                if (totalTicket < trainList[i].totalseats)
+                if (totalTicket < trainList[i].availableseats)
                 {
                     for (int j = 0; j < totalTicket; j++)
                     {
@@ -521,7 +523,7 @@ public:
                         t.bookingStatus = "CONFIRMED";
                         cout << "Booking Status :" << t.bookingStatus << endl;
 
-                        trainList[i].totalseats--;
+                        trainList[i].availableseats--;
 
                         cout << "Ticket Booked Successfully !" << endl;
 
