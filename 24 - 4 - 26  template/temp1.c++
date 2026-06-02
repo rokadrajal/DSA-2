@@ -48,7 +48,7 @@ int main()
 
     cout<<s1.name<<endl<<s1.age<<endl;
 
-    // pair aek template 6e aetle tempalte kriaet no karvu pade
+    // pair aek template 6e aetle tempalte create no karvu pade
 
     pair<string , int> p1;
     p1.first = "sita";
